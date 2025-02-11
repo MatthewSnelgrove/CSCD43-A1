@@ -1,0 +1,22 @@
+# Ignore everything in postgresql-17.2
+/postgresql-17.2/*
+!/postgresql-17.2/src
+/postgresql-17.2/src/*
+!/postgresql-17.2/src/backend
+/postgresql-17.2/src/backend/*
+!/postgresql-17.2/src/backend/storage
+/postgresql-17.2/src/backend/storage/*
+!/postgresql-17.2/src/backend/storage/buffer
+/postgresql-17.2/src/backend/storage/buffer/*
+!/postgresql-17.2/src/backend/storage/buffer/buf_init.c
+!/postgresql-17.2/src/backend/storage/buffer/bufmgr.c
+!/postgresql-17.2/src/backend/storage/buffer/freelist.c
+
+!/postgresql-17.2/src/include
+/postgresql-17.2/src/include/*
+!/postgresql-17.2/src/include/storage
+/postgresql-17.2/src/include/storage/*
+!/postgresql-17.2/src/include/storage/buf_internals.h
+
+# scripts is symlink to dbeaver scripts on my windows filesystem
+scripts
