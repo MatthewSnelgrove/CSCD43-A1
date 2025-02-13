@@ -19,11 +19,10 @@
 #include "storage/proc.h"
 
 BufferDescPadded *BufferDescriptors;
-char	   *BufferBlocks;
+char *BufferBlocks;
 ConditionVariableMinimallyPadded *BufferIOCVArray;
 WritebackContext BackendWritebackContext;
 CkptSortItem *CkptBufferIds;
-
 
 /*
  * Data Structures:
@@ -57,39 +56,37 @@ CkptSortItem *CkptBufferIds;
  *		multiple times. Check the PrivateRefCount infrastructure in bufmgr.c.
  */
 
-
 /*
  * Initialize shared buffer pool
  *
  * This is called once during shared-memory initialization (either in the
  * postmaster, or in a standalone backend).
  */
-void
-InitBufferPool(void)
+void InitBufferPool(void)
 {
-	bool		foundBufs,
-				foundDescs,
-				foundIOCV,
-				foundBufCkpt;
+	bool foundBufs,
+			foundDescs,
+			foundIOCV,
+			foundBufCkpt;
 
 	/* Align descriptors to a cacheline boundary. */
 	BufferDescriptors = (BufferDescPadded *)
-		ShmemInitStruct("Buffer Descriptors",
-						NBuffers * sizeof(BufferDescPadded),
-						&foundDescs);
+			ShmemInitStruct("Buffer Descriptors",
+											NBuffers * sizeof(BufferDescPadded),
+											&foundDescs);
 
 	/* Align buffer pool on IO page size boundary. */
 	BufferBlocks = (char *)
-		TYPEALIGN(PG_IO_ALIGN_SIZE,
-				  ShmemInitStruct("Buffer Blocks",
-								  NBuffers * (Size) BLCKSZ + PG_IO_ALIGN_SIZE,
-								  &foundBufs));
+			TYPEALIGN(PG_IO_ALIGN_SIZE,
+								ShmemInitStruct("Buffer Blocks",
+																NBuffers * (Size)BLCKSZ + PG_IO_ALIGN_SIZE,
+																&foundBufs));
 
 	/* Align condition variables to cacheline boundary. */
 	BufferIOCVArray = (ConditionVariableMinimallyPadded *)
-		ShmemInitStruct("Buffer IO Condition Variables",
-						NBuffers * sizeof(ConditionVariableMinimallyPadded),
-						&foundIOCV);
+			ShmemInitStruct("Buffer IO Condition Variables",
+											NBuffers * sizeof(ConditionVariableMinimallyPadded),
+											&foundIOCV);
 
 	/*
 	 * The array used to sort to-be-checkpointed buffer ids is located in
@@ -99,8 +96,8 @@ InitBufferPool(void)
 	 * painful.
 	 */
 	CkptBufferIds = (CkptSortItem *)
-		ShmemInitStruct("Checkpoint BufferIds",
-						NBuffers * sizeof(CkptSortItem), &foundBufCkpt);
+			ShmemInitStruct("Checkpoint BufferIds",
+											NBuffers * sizeof(CkptSortItem), &foundBufCkpt);
 
 	if (foundDescs || foundBufs || foundIOCV || foundBufCkpt)
 	{
@@ -110,7 +107,7 @@ InitBufferPool(void)
 	}
 	else
 	{
-		int			i;
+		int i;
 
 		/*
 		 * Initialize all the buffer headers.
@@ -122,6 +119,9 @@ InitBufferPool(void)
 			ClearBufferTag(&buf->tag);
 
 			pg_atomic_init_u32(&buf->state, 0);
+			// BEGIN NEW CODE
+			pg_atomic_init_u64(&buf->last_use_time, 0);
+			// END NEW CODE
 			buf->wait_backend_pgprocno = INVALID_PROC_NUMBER;
 
 			buf->buf_id = i;
@@ -133,7 +133,7 @@ InitBufferPool(void)
 			buf->freeNext = i + 1;
 
 			LWLockInitialize(BufferDescriptorGetContentLock(buf),
-							 LWTRANCHE_BUFFER_CONTENT);
+											 LWTRANCHE_BUFFER_CONTENT);
 
 			ConditionVariableInit(BufferDescriptorGetIOCV(buf));
 		}
@@ -147,7 +147,7 @@ InitBufferPool(void)
 
 	/* Initialize per-backend file flush context */
 	WritebackContextInit(&BackendWritebackContext,
-						 &backend_flush_after);
+											 &backend_flush_after);
 }
 
 /*
@@ -156,10 +156,9 @@ InitBufferPool(void)
  * compute the size of shared memory for the buffer pool including
  * data pages, buffer descriptors, hash tables, etc.
  */
-Size
-BufferShmemSize(void)
+Size BufferShmemSize(void)
 {
-	Size		size = 0;
+	Size size = 0;
 
 	/* size of buffer descriptors */
 	size = add_size(size, mul_size(NBuffers, sizeof(BufferDescPadded)));
@@ -175,7 +174,7 @@ BufferShmemSize(void)
 
 	/* size of I/O condition variables */
 	size = add_size(size, mul_size(NBuffers,
-								   sizeof(ConditionVariableMinimallyPadded)));
+																 sizeof(ConditionVariableMinimallyPadded)));
 	/* to allow aligning the above */
 	size = add_size(size, PG_CACHE_LINE_SIZE);
 
