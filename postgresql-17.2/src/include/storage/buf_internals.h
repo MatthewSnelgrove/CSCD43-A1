@@ -57,17 +57,17 @@
  * Note: BM_TAG_VALID essentially means that there is a buffer hashtable
  * entry associated with the buffer's tag.
  */
-#define BM_LOCKED				(1U << 22)	/* buffer header is locked */
-#define BM_DIRTY				(1U << 23)	/* data needs writing */
-#define BM_VALID				(1U << 24)	/* data is valid */
-#define BM_TAG_VALID			(1U << 25)	/* tag is assigned */
-#define BM_IO_IN_PROGRESS		(1U << 26)	/* read or write in progress */
-#define BM_IO_ERROR				(1U << 27)	/* previous I/O failed */
-#define BM_JUST_DIRTIED			(1U << 28)	/* dirtied since write started */
-#define BM_PIN_COUNT_WAITER		(1U << 29)	/* have waiter for sole pin */
-#define BM_CHECKPOINT_NEEDED	(1U << 30)	/* must write for checkpoint */
-#define BM_PERMANENT			(1U << 31)	/* permanent buffer (not unlogged,
-											 * or init fork) */
+#define BM_LOCKED (1U << 22)						/* buffer header is locked */
+#define BM_DIRTY (1U << 23)							/* data needs writing */
+#define BM_VALID (1U << 24)							/* data is valid */
+#define BM_TAG_VALID (1U << 25)					/* tag is assigned */
+#define BM_IO_IN_PROGRESS (1U << 26)		/* read or write in progress */
+#define BM_IO_ERROR (1U << 27)					/* previous I/O failed */
+#define BM_JUST_DIRTIED (1U << 28)			/* dirtied since write started */
+#define BM_PIN_COUNT_WAITER (1U << 29)	/* have waiter for sole pin */
+#define BM_CHECKPOINT_NEEDED (1U << 30) /* must write for checkpoint */
+#define BM_PERMANENT (1U << 31)					/* permanent buffer (not unlogged, \
+																				 * or init fork) */
 /*
  * The maximum allowed value of usage_count represents a tradeoff between
  * accuracy and speed of the clock-sweep buffer management algorithm.  A
@@ -76,7 +76,7 @@
  * clock sweeps to find a free buffer, so in practice we don't want the
  * value to be very large.
  */
-#define BM_MAX_USAGE_COUNT	5
+#define BM_MAX_USAGE_COUNT 5
 
 /*
  * Buffer tag identifies which disk block the buffer contains.
@@ -92,11 +92,11 @@
  */
 typedef struct buftag
 {
-	Oid			spcOid;			/* tablespace oid */
-	Oid			dbOid;			/* database oid */
-	RelFileNumber relNumber;	/* relation file number */
-	ForkNumber	forkNum;		/* fork number */
-	BlockNumber blockNum;		/* blknum relative to begin of reln */
+	Oid spcOid;							 /* tablespace oid */
+	Oid dbOid;							 /* database oid */
+	RelFileNumber relNumber; /* relation file number */
+	ForkNumber forkNum;			 /* fork number */
+	BlockNumber blockNum;		 /* blknum relative to begin of reln */
 } BufferTag;
 
 static inline RelFileNumber
@@ -113,7 +113,7 @@ BufTagGetForkNum(const BufferTag *tag)
 
 static inline void
 BufTagSetRelForkDetails(BufferTag *tag, RelFileNumber relnumber,
-						ForkNumber forknum)
+												ForkNumber forknum)
 {
 	tag->relNumber = relnumber;
 	tag->forkNum = forknum;
@@ -142,7 +142,7 @@ ClearBufferTag(BufferTag *tag)
 
 static inline void
 InitBufferTag(BufferTag *tag, const RelFileLocator *rlocator,
-			  ForkNumber forkNum, BlockNumber blockNum)
+							ForkNumber forkNum, BlockNumber blockNum)
 {
 	tag->spcOid = rlocator->spcOid;
 	tag->dbOid = rlocator->dbOid;
@@ -154,21 +154,20 @@ static inline bool
 BufferTagsEqual(const BufferTag *tag1, const BufferTag *tag2)
 {
 	return (tag1->spcOid == tag2->spcOid) &&
-		(tag1->dbOid == tag2->dbOid) &&
-		(tag1->relNumber == tag2->relNumber) &&
-		(tag1->blockNum == tag2->blockNum) &&
-		(tag1->forkNum == tag2->forkNum);
+				 (tag1->dbOid == tag2->dbOid) &&
+				 (tag1->relNumber == tag2->relNumber) &&
+				 (tag1->blockNum == tag2->blockNum) &&
+				 (tag1->forkNum == tag2->forkNum);
 }
 
 static inline bool
 BufTagMatchesRelFileLocator(const BufferTag *tag,
-							const RelFileLocator *rlocator)
+														const RelFileLocator *rlocator)
 {
 	return (tag->spcOid == rlocator->spcOid) &&
-		(tag->dbOid == rlocator->dbOid) &&
-		(BufTagGetRelNumber(tag) == rlocator->relNumber);
+				 (tag->dbOid == rlocator->dbOid) &&
+				 (BufTagGetRelNumber(tag) == rlocator->relNumber);
 }
-
 
 /*
  * The shared buffer mapping table is partitioned to reduce contention.
@@ -186,7 +185,8 @@ static inline LWLock *
 BufMappingPartitionLock(uint32 hashcode)
 {
 	return &MainLWLockArray[BUFFER_MAPPING_LWLOCK_OFFSET +
-							BufTableHashPartition(hashcode)].lock;
+													BufTableHashPartition(hashcode)]
+							.lock;
 }
 
 static inline LWLock *
@@ -244,15 +244,15 @@ BufMappingPartitionLockByIndex(uint32 index)
  */
 typedef struct BufferDesc
 {
-	BufferTag	tag;			/* ID of page contained in buffer */
-	int			buf_id;			/* buffer's index number (from 0) */
+	BufferTag tag; /* ID of page contained in buffer */
+	int buf_id;		 /* buffer's index number (from 0) */
 
 	/* state of the tag, containing flags, refcount and usagecount */
 	pg_atomic_uint32 state;
 
-	int			wait_backend_pgprocno;	/* backend of pin-count waiter */
-	int			freeNext;		/* link in freelist chain */
-	LWLock		content_lock;	/* to lock access to buffer contents */
+	int wait_backend_pgprocno; /* backend of pin-count waiter */
+	int freeNext;							 /* link in freelist chain */
+	LWLock content_lock;			 /* to lock access to buffer contents */
 } BufferDesc;
 
 /*
@@ -275,12 +275,12 @@ typedef struct BufferDesc
  * platform with either 32 or 128 byte line sizes, it's good to align to
  * boundaries and avoid false sharing.
  */
-#define BUFFERDESC_PAD_TO_SIZE	(SIZEOF_VOID_P == 8 ? 64 : 1)
+#define BUFFERDESC_PAD_TO_SIZE (SIZEOF_VOID_P == 8 ? 64 : 1)
 
 typedef union BufferDescPadded
 {
-	BufferDesc	bufferdesc;
-	char		pad[BUFFERDESC_PAD_TO_SIZE];
+	BufferDesc bufferdesc;
+	char pad[BUFFERDESC_PAD_TO_SIZE];
 } BufferDescPadded;
 
 /*
@@ -290,17 +290,17 @@ typedef union BufferDescPadded
 typedef struct PendingWriteback
 {
 	/* could store different types of pending flushes here */
-	BufferTag	tag;
+	BufferTag tag;
 } PendingWriteback;
 
 /* struct forward declared in bufmgr.h */
 typedef struct WritebackContext
 {
 	/* pointer to the max number of writeback requests to coalesce */
-	int		   *max_pending;
+	int *max_pending;
 
 	/* current number of pending writeback requests */
-	int			nr_pending;
+	int nr_pending;
 
 	/* pending requests */
 	PendingWriteback pending_writebacks[WRITEBACK_MAX_PENDING_FLUSHES];
@@ -313,7 +313,6 @@ extern PGDLLIMPORT WritebackContext BackendWritebackContext;
 
 /* in localbuf.c */
 extern PGDLLIMPORT BufferDesc *LocalBufferDescriptors;
-
 
 static inline BufferDesc *
 GetBufferDescriptor(uint32 id)
@@ -330,7 +329,7 @@ GetLocalBufferDescriptor(uint32 id)
 static inline Buffer
 BufferDescriptorGetBuffer(const BufferDesc *bdesc)
 {
-	return (Buffer) (bdesc->buf_id + 1);
+	return (Buffer)(bdesc->buf_id + 1);
 }
 
 static inline ConditionVariable *
@@ -342,15 +341,15 @@ BufferDescriptorGetIOCV(const BufferDesc *bdesc)
 static inline LWLock *
 BufferDescriptorGetContentLock(const BufferDesc *bdesc)
 {
-	return (LWLock *) (&bdesc->content_lock);
+	return (LWLock *)(&bdesc->content_lock);
 }
 
 /*
  * The freeNext field is either the index of the next freelist entry,
  * or one of these special values:
  */
-#define FREENEXT_END_OF_LIST	(-1)
-#define FREENEXT_NOT_IN_LIST	(-2)
+#define FREENEXT_END_OF_LIST (-1)
+#define FREENEXT_NOT_IN_LIST (-2)
 
 /*
  * Functions for acquiring/releasing a shared buffer header's spinlock.  Do
@@ -375,11 +374,11 @@ UnlockBufHdr(BufferDesc *desc, uint32 buf_state)
  */
 typedef struct CkptSortItem
 {
-	Oid			tsId;
+	Oid tsId;
 	RelFileNumber relNumber;
-	ForkNumber	forkNum;
+	ForkNumber forkNum;
 	BlockNumber blockNum;
-	int			buf_id;
+	int buf_id;
 } CkptSortItem;
 
 extern PGDLLIMPORT CkptSortItem *CkptBufferIds;
@@ -417,17 +416,17 @@ ResourceOwnerForgetBufferIO(ResourceOwner owner, Buffer buffer)
 extern void WritebackContextInit(WritebackContext *context, int *max_pending);
 extern void IssuePendingWritebacks(WritebackContext *wb_context, IOContext io_context);
 extern void ScheduleBufferTagForWriteback(WritebackContext *wb_context,
-										  IOContext io_context, BufferTag *tag);
+																					IOContext io_context, BufferTag *tag);
 
 /* freelist.c */
 extern IOContext IOContextForStrategy(BufferAccessStrategy strategy);
 extern BufferDesc *StrategyGetBuffer(BufferAccessStrategy strategy,
-									 uint32 *buf_state, bool *from_ring);
+																		 uint32 *buf_state, bool *from_ring);
 extern void StrategyFreeBuffer(BufferDesc *buf);
 extern bool StrategyRejectBuffer(BufferAccessStrategy strategy,
-								 BufferDesc *buf, bool from_ring);
+																 BufferDesc *buf, bool from_ring);
 
-extern int	StrategySyncStart(uint32 *complete_passes, uint32 *num_buf_alloc);
+extern int StrategySyncStart(uint32 *complete_passes, uint32 *num_buf_alloc);
 extern void StrategyNotifyBgWriter(int bgwprocno);
 
 extern Size StrategyShmemSize(void);
@@ -438,8 +437,8 @@ extern bool have_free_buffer(void);
 extern Size BufTableShmemSize(int size);
 extern void InitBufTable(int size);
 extern uint32 BufTableHashCode(BufferTag *tagPtr);
-extern int	BufTableLookup(BufferTag *tagPtr, uint32 hashcode);
-extern int	BufTableInsert(BufferTag *tagPtr, uint32 hashcode, int buf_id);
+extern int BufTableLookup(BufferTag *tagPtr, uint32 hashcode);
+extern int BufTableInsert(BufferTag *tagPtr, uint32 hashcode, int buf_id);
 extern void BufTableDelete(BufferTag *tagPtr, uint32 hashcode);
 
 /* localbuf.c */
@@ -447,22 +446,22 @@ extern bool PinLocalBuffer(BufferDesc *buf_hdr, bool adjust_usagecount);
 extern void UnpinLocalBuffer(Buffer buffer);
 extern void UnpinLocalBufferNoOwner(Buffer buffer);
 extern PrefetchBufferResult PrefetchLocalBuffer(SMgrRelation smgr,
-												ForkNumber forkNum,
-												BlockNumber blockNum);
+																								ForkNumber forkNum,
+																								BlockNumber blockNum);
 extern BufferDesc *LocalBufferAlloc(SMgrRelation smgr, ForkNumber forkNum,
-									BlockNumber blockNum, bool *foundPtr);
+																		BlockNumber blockNum, bool *foundPtr);
 extern BlockNumber ExtendBufferedRelLocal(BufferManagerRelation bmr,
-										  ForkNumber fork,
-										  uint32 flags,
-										  uint32 extend_by,
-										  BlockNumber extend_upto,
-										  Buffer *buffers,
-										  uint32 *extended_by);
+																					ForkNumber fork,
+																					uint32 flags,
+																					uint32 extend_by,
+																					BlockNumber extend_upto,
+																					Buffer *buffers,
+																					uint32 *extended_by);
 extern void MarkLocalBufferDirty(Buffer buffer);
 extern void DropRelationLocalBuffers(RelFileLocator rlocator,
-									 ForkNumber forkNum,
-									 BlockNumber firstDelBlock);
+																		 ForkNumber forkNum,
+																		 BlockNumber firstDelBlock);
 extern void DropRelationAllLocalBuffers(RelFileLocator rlocator);
 extern void AtEOXact_LocalBuffers(bool isCommit);
 
-#endif							/* BUFMGR_INTERNALS_H */
+#endif /* BUFMGR_INTERNALS_H */
