@@ -368,7 +368,7 @@ StrategyGetBuffer(BufferAccessStrategy strategy, uint32 *buf_state, bool *from_r
 		if (BUF_STATE_GET_REFCOUNT(local_buf_state) == 0)
 		{
 			// found better choice to evict (last use time is older)
-			if (buf_to_evict == NULL || buf->last_use_time < buf_to_evict->last_use_time)
+			if (buf_to_evict == NULL || buf->last_use_time > buf_to_evict->last_use_time)
 			{
 				buf_to_evict = buf;
 			}
