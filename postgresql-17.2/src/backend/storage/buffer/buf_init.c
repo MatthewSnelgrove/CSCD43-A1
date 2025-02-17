@@ -120,7 +120,7 @@ void InitBufferPool(void)
 
 			pg_atomic_init_u32(&buf->state, 0);
 			// BEGIN NEW CODE
-			pg_atomic_init_u64(&buf->last_use_time, 0);
+			buf->usage_count = 0;
 			// END NEW CODE
 			buf->wait_backend_pgprocno = INVALID_PROC_NUMBER;
 

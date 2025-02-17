@@ -251,7 +251,9 @@ typedef struct BufferDesc
 	pg_atomic_uint32 state;
 
 	// BEGIN NEW CODE
-	TimestampTz last_use_time;
+	// don't want to deal with weirdness of buff state.
+	// also want more than 4 bits (16) max usage count
+	int usage_count;
 	// END NEW CODE
 
 	int wait_backend_pgprocno; /* backend of pin-count waiter */
