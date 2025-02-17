@@ -1632,6 +1632,11 @@ BufferAlloc(SMgrRelation smgr, char relpersistence, ForkNumber forkNum,
 			*foundPtr = false;
 		}
 
+		// BEGIN NEW CODE
+		// update last_use_time of the buffer when reading
+		buf->last_use_time = GetCurrentTimestamp();
+		// END NEW CODE
+
 		return buf;
 	}
 
@@ -1700,6 +1705,10 @@ BufferAlloc(SMgrRelation smgr, char relpersistence, ForkNumber forkNum,
 			*foundPtr = false;
 		}
 
+		// BEGIN NEW CODE
+		// update last_use_time of the buffer when reading
+		existing_buf_hdr->last_use_time = GetCurrentTimestamp();
+		// END NEW CODE
 		return existing_buf_hdr;
 	}
 
@@ -1733,6 +1742,10 @@ BufferAlloc(SMgrRelation smgr, char relpersistence, ForkNumber forkNum,
 	 */
 	*foundPtr = false;
 
+	// BEGIN NEW CODE
+	// update last_use_time of the buffer when reading
+	victim_buf_hdr->last_use_time = GetCurrentTimestamp();
+	// END NEW CODE
 	return victim_buf_hdr;
 }
 
@@ -2646,6 +2659,7 @@ PinBuffer(BufferDesc *buf, BufferAccessStrategy strategy)
 			/* increase refcount */
 			buf_state += BUF_REFCOUNT_ONE;
 
+			// get rid of usage count stuff
 			// BEGIN OLD CODE
 			// if (strategy == NULL)
 			// {
@@ -2663,11 +2677,6 @@ PinBuffer(BufferDesc *buf, BufferAccessStrategy strategy)
 			// 		buf_state += BUF_USAGECOUNT_ONE;
 			// }
 			// END OLD CODE
-
-			// BEGIN NEW CODE
-			// Set the last_use_time to the current time regardless of strategy
-			buf->last_use_time = GetCurrentTimestamp();
-			// END NEW CODE
 
 			if (pg_atomic_compare_exchange_u32(&buf->state, &old_buf_state,
 																				 buf_state))

@@ -251,7 +251,7 @@ typedef struct BufferDesc
 	pg_atomic_uint32 state;
 
 	// BEGIN NEW CODE
-	uint64_t last_use_time;
+	TimestampTz last_use_time;
 	// END NEW CODE
 
 	int wait_backend_pgprocno; /* backend of pin-count waiter */

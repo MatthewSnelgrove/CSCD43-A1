@@ -358,8 +358,7 @@ StrategyGetBuffer(BufferAccessStrategy strategy, uint32 *buf_state, bool *from_r
 	// END OLD CODE
 
 	// BEGIN NEW CODE
-	/* Nothing on the freelist, so a single sweep to find the available frame least-recently-used */
-	uint64_t min_last_use_time = UINT64_MAX;
+	/* Nothing on the freelist, so do a single sweep to find the available buffer least-recently-used */
 	BufferDesc *buf_to_evict = NULL;
 	for (int i = 0; i < NBuffers; i++)
 	{
@@ -368,12 +367,13 @@ StrategyGetBuffer(BufferAccessStrategy strategy, uint32 *buf_state, bool *from_r
 		// still need to check if the buffer is pinned
 		if (BUF_STATE_GET_REFCOUNT(local_buf_state) == 0)
 		{
-			if (buf->last_use_time < min_last_use_time)
+			// found better choice to evict (last use time is older)
+			if (buf_to_evict == NULL || buf->last_use_time < buf_to_evict->last_use_time)
 			{
-				min_last_use_time = buf->last_use_time;
 				buf_to_evict = buf;
 			}
 		}
+		UnlockBufHdr(buf, local_buf_state);
 	}
 	// error if every buffer is pinned
 	if (buf_to_evict == NULL)
@@ -384,9 +384,11 @@ StrategyGetBuffer(BufferAccessStrategy strategy, uint32 *buf_state, bool *from_r
 	{
 		if (strategy != NULL)
 			AddBufferToRing(strategy, buf_to_evict);
+		// reacquire lock before evicting
 		*buf_state = LockBufHdr(buf_to_evict);
 		return buf_to_evict;
 	}
+	// END NEW CODE
 }
 
 /*
