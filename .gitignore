@@ -20,3 +20,5 @@
 
 # scripts is symlink to dbeaver scripts on my windows filesystem
 scripts
+# output explain results
+/outputs
