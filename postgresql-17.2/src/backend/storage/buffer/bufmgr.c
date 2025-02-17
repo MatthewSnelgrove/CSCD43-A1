@@ -1174,6 +1174,11 @@ PinBufferForBlock(Relation rel,
 																			true);
 	}
 
+	// BEGIN NEW CODE
+	// Update the last_use_time of the buffer descriptor
+	bufHdr->last_use_time = GetCurrentTimestamp();
+	// END NEW CODE
+
 	return BufferDescriptorGetBuffer(bufHdr);
 }
 
@@ -1632,11 +1637,6 @@ BufferAlloc(SMgrRelation smgr, char relpersistence, ForkNumber forkNum,
 			*foundPtr = false;
 		}
 
-		// BEGIN NEW CODE
-		// update last_use_time of the buffer when reading
-		buf->last_use_time = GetCurrentTimestamp();
-		// END NEW CODE
-
 		return buf;
 	}
 
@@ -1705,10 +1705,6 @@ BufferAlloc(SMgrRelation smgr, char relpersistence, ForkNumber forkNum,
 			*foundPtr = false;
 		}
 
-		// BEGIN NEW CODE
-		// update last_use_time of the buffer when reading
-		existing_buf_hdr->last_use_time = GetCurrentTimestamp();
-		// END NEW CODE
 		return existing_buf_hdr;
 	}
 
@@ -1742,10 +1738,6 @@ BufferAlloc(SMgrRelation smgr, char relpersistence, ForkNumber forkNum,
 	 */
 	*foundPtr = false;
 
-	// BEGIN NEW CODE
-	// update last_use_time of the buffer when reading
-	victim_buf_hdr->last_use_time = GetCurrentTimestamp();
-	// END NEW CODE
 	return victim_buf_hdr;
 }
 
