@@ -1,17 +1,16 @@
 #!/bin/bash
 
 # Default values
-USE_INDEX_SCAN=false
 OUTPUT_FILE=""
 DIR_PATH="/home/matth/Winter2025/CSCD43/A1"
 SQL_FILE="$DIR_PATH/scripts/ScanQueries.sql"
+BIN_DIR="/usr/local/pgsql/bin"
 
 # Parse command line options
 while getopts "i" opt; do
   case $opt in
     i) 
       # Flag to use index scan
-      USE_INDEX_SCAN=true
       SQL_FILE="$DIR_PATH/scripts/IndexScanQueries.sql"
       ;;
     *)
@@ -38,7 +37,7 @@ OUTPUT_FILE="$DIR_PATH/outputs/$1.txt"
 mkdir -p "$DIR_PATH/outputs"
 
 # Run the PostgreSQL query file and output the result to the specified file
-psql -U postgres -d A1DB -f $SQL_FILE -o $OUTPUT_FILE
+$BIN_DIR/psql -U postgres -d A1DB -f $SQL_FILE -o $OUTPUT_FILE
 
 # Notify the user that the script has finished
 echo "Queries have been executed and the output is saved to $OUTPUT_FILE"
