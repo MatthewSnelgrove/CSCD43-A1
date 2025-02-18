@@ -36,7 +36,7 @@ while IFS= read -r line; do
     PROCESS_NEXT_LINE=false
 
     # Check if the line is "Aggregate" or "Planning:"
-    if [[ "$line" =~ ^" Aggregate  " || "$line" =~ ^" Planning:" ]]; then
+    if [[ "$line" =~ ^" Aggregate  " ]]; then
         PROCESS_NEXT_LINE=true
     fi
 
@@ -56,6 +56,7 @@ done < "$LOG_FILE"
 
 # Compute for final query
 HIT_RATE=$(bc -l <<< "scale=4; $CURRENT_HITS / ($CURRENT_HITS + $CURRENT_READS)")
+TOTAL_HITS_PERCENTAGE=$(bc -l <<< "scale=4; $TOTAL_HITS_PERCENTAGE + $HIT_RATE")
 
 AVERAGE_HIT_RATE=$(bc -l <<< "scale=4; $TOTAL_HITS_PERCENTAGE / $QUERY_COUNT")
 AVERAGE_MISS_RATE=$(bc -l <<< "scale=4; 1 - $AVERAGE_HIT_RATE")
