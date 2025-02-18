@@ -14,8 +14,10 @@ if [[ ! -f "$LOG_FILE" ]]; then
     exit 1
 fi
 
-TOTAL_HITS=0
-TOTAL_READS=0
+TOTAL_HITS_PERCENTAGE=0
+CURRENT_HITS=0
+CURRENT_READS=0
+QUERY_COUNT=0
 PROCESS_NEXT_LINE=false
 
 while IFS= read -r line; do
@@ -25,27 +27,38 @@ while IFS= read -r line; do
         READS=$(echo "$line" | grep -oP "read=\d+" | awk -F= '{print $2}')
 
         # Add to totals (default to 0 if empty)
-        TOTAL_HITS=$((TOTAL_HITS + ${HITS:-0}))
-        TOTAL_READS=$((TOTAL_READS + ${READS:-0}))
+        CURRENT_HITS=$((CURRENT_HITS + ${HITS:-0}))
+        CURRENT_READS=$((CURRENT_READS + ${READS:-0}))
 
-        # Reset flag
-        PROCESS_NEXT_LINE=false
     fi
+
+    # Reset flag
+    PROCESS_NEXT_LINE=false
 
     # Check if the line is "Aggregate" or "Planning:"
     if [[ "$line" =~ ^" Aggregate  " || "$line" =~ ^" Planning:" ]]; then
         PROCESS_NEXT_LINE=true
     fi
+
+    # Check if start of new query and query count is greater than 0
+    if [[ "$line" =~ "QUERY PLAN" ]]; then
+        QUERY_COUNT=$((QUERY_COUNT + 1))
+        if [[ $QUERY_COUNT -eq 1 ]]; then
+            continue
+        fi
+        # float division
+        HIT_RATE=$(bc -l <<< "scale=4; $CURRENT_HITS / ($CURRENT_HITS + $CURRENT_READS)")
+        TOTAL_HITS_PERCENTAGE=$(bc -l <<< "scale=4; $TOTAL_HITS_PERCENTAGE + $HIT_RATE")
+        CURRENT_HITS=0
+        CURRENT_READS=0
+    fi
 done < "$LOG_FILE"
 
-# Calculate hit rate (avoid division by zero)
-TOTAL_ACCESSES=$((TOTAL_HITS + TOTAL_READS))
-if [[ $TOTAL_ACCESSES -eq 0 ]]; then
-    HIT_RATE=0
-else
-    HIT_RATE=$(awk "BEGIN {printf \"%.4f\", $TOTAL_HITS / $TOTAL_ACCESSES}")
-fi
+# Compute for final query
+HIT_RATE=$(bc -l <<< "scale=4; $CURRENT_HITS / ($CURRENT_HITS + $CURRENT_READS)")
 
-echo "Total Buffer Hits: $TOTAL_HITS"
-echo "Total Buffer Reads: $TOTAL_READS"
-echo "Hit Rate: $HIT_RATE"
+AVERAGE_HIT_RATE=$(bc -l <<< "scale=4; $TOTAL_HITS_PERCENTAGE / $QUERY_COUNT")
+AVERAGE_MISS_RATE=$(bc -l <<< "scale=4; 1 - $AVERAGE_HIT_RATE")
+
+echo "Average Hit Rate: $AVERAGE_HIT_RATE"
+echo "Average Miss Rate: $AVERAGE_MISS_RATE"
