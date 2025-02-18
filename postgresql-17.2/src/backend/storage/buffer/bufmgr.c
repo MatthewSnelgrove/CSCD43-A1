@@ -1186,8 +1186,6 @@ PinBufferForBlock(Relation rel,
 		// Read new page into buffer - set count to 1
 		bufHdr->usage_count = 1;
 	}
-	// regardless, update the last_use_time
-	bufHdr->last_use_time = GetCurrentTimestamp();
 	// END NEW CODE
 
 	return BufferDescriptorGetBuffer(bufHdr);
