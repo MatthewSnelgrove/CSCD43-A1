@@ -19,6 +19,7 @@ CURRENT_HITS=0
 CURRENT_READS=0
 QUERY_COUNT=0
 PROCESS_NEXT_LINE=false
+TOTAL_EXECUTION_TIME=0
 
 while IFS= read -r line; do
     if [[ "$PROCESS_NEXT_LINE" == true ]]; then
@@ -52,6 +53,12 @@ while IFS= read -r line; do
         CURRENT_HITS=0
         CURRENT_READS=0
     fi
+
+    # Add to total execution time
+    if [[ "$line" =~ "Execution Time" ]]; then
+        EXECUTION_TIME=$(echo "$line" | grep -oP "\d+\.\d+" | awk '{print $1}')
+        TOTAL_EXECUTION_TIME=$(bc -l <<< "scale=4; $TOTAL_EXECUTION_TIME + $EXECUTION_TIME")
+    fi
 done < "$LOG_FILE"
 
 # Compute for final query
@@ -61,5 +68,8 @@ TOTAL_HITS_PERCENTAGE=$(bc -l <<< "scale=4; $TOTAL_HITS_PERCENTAGE + $HIT_RATE")
 AVERAGE_HIT_RATE=$(bc -l <<< "scale=4; $TOTAL_HITS_PERCENTAGE / $QUERY_COUNT")
 AVERAGE_MISS_RATE=$(bc -l <<< "scale=4; 1 - $AVERAGE_HIT_RATE")
 
+AVERAGE_EXECUTION_TIME=$(bc -l <<< "scale=4; $TOTAL_EXECUTION_TIME / $QUERY_COUNT")
+
 echo "Average Hit Rate: $AVERAGE_HIT_RATE"
 echo "Average Miss Rate: $AVERAGE_MISS_RATE"
+echo "Average Execution Time: $AVERAGE_EXECUTION_TIME"
