@@ -367,8 +367,11 @@ StrategyGetBuffer(BufferAccessStrategy strategy, uint32 *buf_state, bool *from_r
 		// still need to check if the buffer is pinned
 		if (BUF_STATE_GET_REFCOUNT(local_buf_state) == 0)
 		{
-			// found better choice to evict (fewer uses)
-			if (buf_to_evict == NULL || buf->usage_count < buf_to_evict->usage_count)
+			// found better choice to evict (fewer uses or equal uses and older)
+			if (buf_to_evict == NULL ||
+					buf->usage_count < buf_to_evict->usage_count ||
+					(buf->usage_count == buf_to_evict->usage_count &&
+					 buf->last_use_time < buf_to_evict->last_use_time))
 			{
 				buf_to_evict = buf;
 			}

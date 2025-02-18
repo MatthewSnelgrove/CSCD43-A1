@@ -254,6 +254,9 @@ typedef struct BufferDesc
 	// don't want to deal with weirdness of buff state.
 	// also want more than 4 bits (16) max usage count
 	int usage_count;
+	// use timestamp as tiebreaker - evict oldest.
+	// hopefully mitigate just using a single buffer over and over
+	TimestampTz last_use_time;
 	// END NEW CODE
 
 	int wait_backend_pgprocno; /* backend of pin-count waiter */
